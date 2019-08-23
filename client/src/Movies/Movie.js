@@ -1,48 +1,49 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
+
 import MovieCard from "./MovieCard";
-export default class Movie extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      movie: null
-    };
-  }
 
-  componentDidMount() {
-    this.fetchMovie(this.props.match.params.id);
-  }
+const Movie = props => {
+  // console.log(props);
+  const [movie, setMovie] = useState(null);
+  const [movieSaved, setMovieSaved] = useState(false);
+  useEffect(() => {
+    const id = props.match.params.id;
 
-  componentWillReceiveProps(newProps) {
-    if (this.props.match.params.id !== newProps.match.params.id) {
-      this.fetchMovie(newProps.match.params.id);
-    }
-  }
-
-  fetchMovie = id => {
     axios
       .get(`http://localhost:5000/api/movies/${id}`)
-      .then(res => this.setState({ movie: res.data }))
-      .catch(err => console.log(err.response));
-  };
+      .then(response => {
+        setMovie(response.data);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  }, [props.match.params.id]);
 
-  saveMovie = () => {
-    const addToSavedList = this.props.addToSavedList;
-    addToSavedList(this.state.movie);
-  };
-
-  render() {
-    if (!this.state.movie) {
-      return <div>Loading movie information...</div>;
+  useEffect(() => {
+    if (movieSaved === true) {
+      const addToSavedList = props.addToSavedList;
+      return addToSavedList(movie);
     }
+    return;
+  }, [movieSaved]);
 
-    return (
-      <div className="save-wrapper">
-        <MovieCard movie={this.state.movie} />
-        <div className="save-button" onClick={this.saveMovie}>
-          Save
-        </div>
-      </div>
-    );
+  if (!movie) {
+    return <div>Loading movie information...</div>;
   }
-}
+
+  return (
+    <div className="save-wrapper">
+      <MovieCard key={movie.id} movie={movie} />
+      <div onClick={() => setMovieSaved(true)} className="save-button">
+        Save
+      </div>
+      <Link to={`/update-movie/${movie.id}`}>
+        <div className="update-button">Update</div>
+      </Link>
+    </div>
+  );
+};
+
+export default Movie;
