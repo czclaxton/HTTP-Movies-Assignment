@@ -8,17 +8,20 @@ const Movie = props => {
   // console.log(props);
   const [movie, setMovie] = useState(null);
   const [movieSaved, setMovieSaved] = useState(false);
-  useEffect(() => {
-    const id = props.match.params.id;
 
+  const fetchMovie = id => {
     axios
       .get(`http://localhost:5000/api/movies/${id}`)
-      .then(response => {
-        setMovie(response.data);
+      .then(res => {
+        setMovie(res.data);
       })
-      .catch(error => {
-        console.error(error);
+      .catch(err => {
+        console.error(err.response);
       });
+  };
+
+  useEffect(() => {
+    fetchMovie(props.match.params.id);
   }, [props.match.params.id]);
 
   useEffect(() => {
@@ -33,6 +36,11 @@ const Movie = props => {
     return <div>Loading movie information...</div>;
   }
 
+  const deleteMovie = () => {
+    axios.delete(`http://localhost:5000/api/movies/${movie.id}`);
+    props.history.push("/");
+  };
+
   return (
     <div className="save-wrapper">
       <MovieCard key={movie.id} movie={movie} />
@@ -42,6 +50,7 @@ const Movie = props => {
       <Link to={`/update-movie/${movie.id}`}>
         <div className="update-button">Update</div>
       </Link>
+      <button onClick={deleteMovie}>Delete</button>
     </div>
   );
 };
