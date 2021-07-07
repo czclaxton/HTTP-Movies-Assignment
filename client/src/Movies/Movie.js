@@ -1,48 +1,58 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
+
 import MovieCard from "./MovieCard";
-export default class Movie extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      movie: null
-    };
-  }
 
-  componentDidMount() {
-    this.fetchMovie(this.props.match.params.id);
-  }
+const Movie = props => {
+  // console.log(props);
+  const [movie, setMovie] = useState(null);
+  const [movieSaved, setMovieSaved] = useState(false);
 
-  componentWillReceiveProps(newProps) {
-    if (this.props.match.params.id !== newProps.match.params.id) {
-      this.fetchMovie(newProps.match.params.id);
-    }
-  }
-
-  fetchMovie = id => {
+  const fetchMovie = id => {
     axios
       .get(`http://localhost:5000/api/movies/${id}`)
-      .then(res => this.setState({ movie: res.data }))
-      .catch(err => console.log(err.response));
+      .then(res => {
+        setMovie(res.data);
+      })
+      .catch(err => {
+        console.error(err.response);
+      });
   };
 
-  saveMovie = () => {
-    const addToSavedList = this.props.addToSavedList;
-    addToSavedList(this.state.movie);
-  };
+  useEffect(() => {
+    fetchMovie(props.match.params.id);
+  }, [props.match.params.id]);
 
-  render() {
-    if (!this.state.movie) {
-      return <div>Loading movie information...</div>;
+  useEffect(() => {
+    if (movieSaved === true) {
+      const addToSavedList = props.addToSavedList;
+      return addToSavedList(movie);
     }
+    return;
+  }, [movieSaved]);
 
-    return (
-      <div className="save-wrapper">
-        <MovieCard movie={this.state.movie} />
-        <div className="save-button" onClick={this.saveMovie}>
-          Save
-        </div>
-      </div>
-    );
+  if (!movie) {
+    return <div>Loading movie information...</div>;
   }
-}
+
+  const deleteMovie = () => {
+    axios.delete(`http://localhost:5000/api/movies/${movie.id}`);
+    props.history.push("/");
+  };
+
+  return (
+    <div className="save-wrapper">
+      <MovieCard key={movie.id} movie={movie} />
+      <div onClick={() => setMovieSaved(true)} className="save-button">
+        Save
+      </div>
+      <Link to={`/update-movie/${movie.id}`}>
+        <div className="update-button">Update</div>
+      </Link>
+      <button onClick={deleteMovie}>Delete</button>
+    </div>
+  );
+};
+
+export default Movie;
